@@ -8,15 +8,8 @@ const bookingsRoutes = require('./routes/bookings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URI || '';
-
-if (!MONGODB_URI) {
-  console.error('Missing MONGODB_URI in environment. Add it to .env');
-  process.exit(1);
-}
-
-// Connect DB
-connectDB(MONGODB_URI);
+// Allow connectDB to build the URI from individual env vars when MONGODB_URI is not provided
+const MONGODB_URI = process.env.MONGODB_URI || '';
 
 // Middlewares
 app.use(cors());
@@ -41,4 +34,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: 'Server error' });
 });
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+// Start server after DB connection
+const startServer = async () => {
+  try {
+    await connectDB(MONGODB_URI);
+    app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+};
+
+startServer();
